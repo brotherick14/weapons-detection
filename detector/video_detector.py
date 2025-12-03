@@ -1,0 +1,126 @@
+import cv2
+import time
+import os
+from ultralytics import YOLO
+from alerts import send_telegram_alert
+
+MODEL = YOLO("best.pt")
+ALERT_FOLDER = "alerts"
+os.makedirs(ALERT_FOLDER, exist_ok=True)
+
+CONF_SOFT = 0.40
+CONF_HARD = 0.55
+IOU_NMS = 0.40
+MIN_AREA = 2500
+MIN_RATIO = 1.1
+FRAME_STREAK_REQUIRED = 3
+ALERT_COOLDOWN = 5
+
+
+def process_video_file(path):
+    cap = cv2.VideoCapture(path)
+
+    frame_streak = 0
+    last_alert_time = 0
+    last_box = None
+    stable_hits = 0
+    alerts = []
+
+    last_saved_alert = None
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        results = MODEL(frame, conf=CONF_SOFT, iou=IOU_NMS, verbose=False)
+
+        # FRAME ANOTADO CON CAJAS
+        annotated = results[0].plot()
+
+        gun_detected = False
+        hard_hit = False
+        best_conf = 0
+        best_box = None
+
+        for box in results[0].boxes:
+            cls = int(box.cls[0])
+            conf = float(box.conf[0])
+            if cls != 0:
+                continue
+
+            x1, y1, x2, y2 = map(int, box.xyxy[0])
+            w, h = x2 - x1, y2 - y1
+            area = w * h
+            ratio = w / h
+
+            if area < MIN_AREA or ratio < MIN_RATIO:
+                continue
+
+            gun_detected = True
+            if conf >= CONF_HARD:
+                hard_hit = True
+
+            if conf > best_conf:
+                best_conf = conf
+                best_box = (x1, y1, x2, y2)
+
+        # -------- ESTABILIDAD ----------
+        if gun_detected and best_box:
+            if last_box:
+                lx1, ly1, lx2, ly2 = last_box
+                bx1, by1, bx2, by2 = best_box
+
+                dx = abs(bx1 - lx1) + abs(bx2 - lx2)
+                dy = abs(by1 - ly1) + abs(by2 - ly2)
+
+                if dx + dy < 90:
+                    stable_hits += 1
+                else:
+                    stable_hits = 0
+
+            last_box = best_box
+        else:
+            stable_hits = 0
+            last_box = None
+
+        # -------- STREAK ----------
+        frame_streak = frame_streak + 1 if gun_detected else 0
+
+        now = time.time()
+
+        # -------- ALERTA ----------
+        if (
+            frame_streak >= FRAME_STREAK_REQUIRED
+            and hard_hit
+            and stable_hits >= 2
+            and (now - last_alert_time) > ALERT_COOLDOWN
+        ):
+            last_alert_time = now
+            timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+
+            img_path = f"{ALERT_FOLDER}/alert_{int(now)}.jpg"
+
+            # GUARDAMOS EL FRAME ANOTADO
+            cv2.imwrite(img_path, annotated)
+
+            send_telegram_alert(
+                message=f"⚠️ ARMA DETECTADA\nConfianza: {best_conf:.2f}\nFecha: {timestamp}",
+                photo_path=img_path,
+            )
+
+            alert_info = {
+                "image_path": img_path,
+                "timestamp": timestamp,
+                "conf": best_conf,
+            }
+            alerts.append(alert_info)
+            last_saved_alert = alert_info
+
+    cap.release()
+
+    return {
+        "status": "ok",
+        "message": "Video procesado con bounding boxes",
+        "alerts": alerts,
+    }
