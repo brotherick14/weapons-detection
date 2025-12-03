@@ -1,6 +1,7 @@
 # Gun Detection Demo
 
 Panel web con FastAPI/Ultralytics YOLO para detección de armas en video subido, webcam o RTSP, con alertas a Telegram y carrusel de imágenes. Incluye un script CLI (`local_testing.py`) para probar sin UI.
+<img width="1461" height="782" alt="image" src="https://github.com/user-attachments/assets/0fc232fc-1211-44e5-b7b9-19947a73f353" />
 
 ## Requisitos
 - Python 3.10+
