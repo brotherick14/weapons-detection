@@ -3,10 +3,9 @@ import time
 import os
 import threading
 from typing import Optional
-from ultralytics import YOLO
 from alerts import send_telegram_alert
+from detector.model_provider import get_model
 
-MODEL = YOLO("best.pt")
 ALERT_FOLDER = "alerts"
 os.makedirs(ALERT_FOLDER, exist_ok=True)
 
@@ -21,6 +20,7 @@ ALERT_COOLDOWN = 5
 
 def process_rtsp_stream(source, stop_event: Optional[threading.Event] = None):
     stop_event = stop_event or threading.Event()
+    model = get_model()
     cap = cv2.VideoCapture(source)
 
     if not cap.isOpened():
@@ -37,7 +37,7 @@ def process_rtsp_stream(source, stop_event: Optional[threading.Event] = None):
             time.sleep(0.5)
             continue
 
-        results = MODEL(frame, conf=CONF_SOFT, iou=IOU_NMS, verbose=False)
+        results = model(frame, conf=CONF_SOFT, iou=IOU_NMS, verbose=False)
 
         # FRAME ANOTADO
         annotated = results[0].plot()

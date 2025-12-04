@@ -1,10 +1,9 @@
 import cv2
 import time
 import os
-from ultralytics import YOLO
 from alerts import send_telegram_alert
+from detector.model_provider import get_model
 
-MODEL = YOLO("best.pt")
 ALERT_FOLDER = "alerts"
 os.makedirs(ALERT_FOLDER, exist_ok=True)
 
@@ -18,6 +17,7 @@ ALERT_COOLDOWN = 5
 
 
 def process_video_file(path):
+    model = get_model()
     cap = cv2.VideoCapture(path)
 
     frame_streak = 0
@@ -33,7 +33,7 @@ def process_video_file(path):
         if not ret:
             break
 
-        results = MODEL(frame, conf=CONF_SOFT, iou=IOU_NMS, verbose=False)
+        results = model(frame, conf=CONF_SOFT, iou=IOU_NMS, verbose=False)
 
         # FRAME ANOTADO CON CAJAS
         annotated = results[0].plot()

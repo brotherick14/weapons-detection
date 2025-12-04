@@ -7,10 +7,10 @@ import os
 import cv2
 import threading
 import time
-from ultralytics import YOLO
 
 from detector.video_detector import process_video_file
 from detector.live_detector import process_rtsp_stream
+from detector.model_provider import get_model
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
@@ -22,7 +22,6 @@ os.makedirs(ALERT_DIR, exist_ok=True)
 STATIC_DIR = "static"
 os.makedirs(STATIC_DIR, exist_ok=True)
 
-model = YOLO("best.pt")
 stream_stop_event = threading.Event()
 detection_stop_event = threading.Event()
 
@@ -79,6 +78,7 @@ async def detect_video(file: UploadFile = File(...)):
 # STREAM DE VIDEO SUBIDO
 # -------------------------
 def generate_video_stream(path):
+    model = get_model()
     stream_stop_event.clear()
     cap = cv2.VideoCapture(path)
 
@@ -147,6 +147,7 @@ def detect_webcam():
 # STREAM PARA WEBCAM
 # -------------------------
 def generate_webcam_stream():
+    model = get_model()
     stream_stop_event.clear()
     cap = cv2.VideoCapture(0)
 
@@ -176,6 +177,7 @@ def webcam_stream():
 # STREAM PARA RTSP
 # -------------------------
 def generate_rtsp_stream(url):
+    model = get_model()
     stream_stop_event.clear()
     cap = cv2.VideoCapture(url)
 
