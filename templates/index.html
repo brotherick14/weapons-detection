@@ -147,7 +147,7 @@
     <!-- Added modal for full-size image viewing -->
     <div class="image-modal" id="imageModal" onclick="closeModal(event)">
         <div class="modal-content">
-            <img id="modalImage" class="modal-image" src="/placeholder.svg" alt="Detección en tamaño completo">
+            <img id="modalImage" class="modal-image" src="{{ url_for('static', path='placeholder.svg') }}" alt="Detección en tamaño completo">
             <button class="modal-close" onclick="closeModal(event)">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="18" y1="6" x2="6" y2="18"/>
