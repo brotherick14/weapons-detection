@@ -60,6 +60,13 @@ Se usan en ambos detectores (`detector/video_detector.py` y `detector/live_detec
 
 Puedes editar estos valores directamente en los archivos y reiniciar. El modelo se carga una sola vez (en `detector/model_provider.py`) usando `MODEL_PATH` o `models/guns.pt` por defecto.
 
+## Arquitectura y decisiones técnicas
+- **Carga única de modelo**: `detector/model_provider.py` expone `get_model()` con caché para reutilizar el modelo YOLO en API, detección en video y live, evitando cargas múltiples.
+- **Procesamiento en background**: `api.py` lanza hilos para detección de videos (`process_video_and_cleanup`) y streams (webcam/RTSP) para que la UI responda rápido. Los videos se auto-eliminan tras un breve delay; las alertas se guardan en `alerts/`.
+- **Separación de capas**: la lógica de detección está en `detector/`, la UI en `templates/` + `static/`, y las alertas en `alerts.py`. Los assets (favicon, CSS, JS) viven en `static/`.
+- **Streaming MJPEG**: los endpoints `/stream*` generan frames anotados on-the-fly; `/stream/stop` corta tanto el stream como la captura/detección para liberar cámara.
+- **Resultados de entrenamiento**: en `models/results/` se guardan gráficas y artefactos (train batch, test images) por modelo entrenado.
+
 ## Notas
 - `uploads/` se crea en el proceso para procesar videos subidos; se limpia automáticamente después de procesar.
 - `alerts/` almacena las imágenes de las alertas; sirve estático en `/alerts/…`.

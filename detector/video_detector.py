@@ -1,3 +1,5 @@
+"""Detección en archivos de video con YOLO y generación de alertas."""
+
 import cv2
 import time
 import os
@@ -17,6 +19,11 @@ ALERT_COOLDOWN = 5
 
 
 def process_video_file(path):
+    """
+    Recorre un archivo de video, corre YOLO en cada frame y dispara alertas
+    cuando se cumplen las condiciones configuradas. Guarda frames anotados en
+    el directorio ALERT_FOLDER y devuelve metadatos de las alertas.
+    """
     model = get_model()
     cap = cv2.VideoCapture(path)
 

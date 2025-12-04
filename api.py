@@ -42,6 +42,10 @@ async def home(request: Request):
 # DETECCIÓN POR VIDEO FILE
 # -------------------------
 def process_video_and_cleanup(path: str, cleanup_delay: int = 60):
+    """
+    Ejecuta la detección sobre un archivo y lo elimina después de un retardo,
+    para no acumular uploads en disco mientras se permite el streaming temporal.
+    """
     try:
         process_video_file(path)
     finally:

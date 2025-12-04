@@ -1,3 +1,5 @@
+"""Detección en streams (webcam/RTSP) con YOLO y alertas a Telegram."""
+
 import cv2
 import time
 import os
@@ -19,6 +21,11 @@ ALERT_COOLDOWN = 5
 
 
 def process_rtsp_stream(source, stop_event: Optional[threading.Event] = None):
+    """
+    Lee un stream (RTSP/webcam), corre YOLO en cada frame y envía alertas
+    cuando se cumplen las condiciones configuradas. Puede detenerse con
+    stop_event (señal externa) para liberar la cámara.
+    """
     stop_event = stop_event or threading.Event()
     model = get_model()
     cap = cv2.VideoCapture(source)
